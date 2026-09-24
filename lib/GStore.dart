@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workshop_flutter__4ei3/CardFilmItem.dart';
+import 'package:workshop_flutter__4ei3/Cart.dart';
 import 'package:workshop_flutter__4ei3/FilmDetailPage.dart';
 
 class GStore extends StatefulWidget {
@@ -10,6 +11,20 @@ class GStore extends StatefulWidget {
 }
 
 class _GStoreState extends State<GStore> {
+  final List<CartItem> cartItems = [];
+
+  void openCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CartPage(
+          items: cartItems,
+          onRemove: (item) => setState(() => cartItems.remove(item)),
+        ),
+      ),
+    );
+  }
+
   void openFilm({
     required String image,
     required String title,
@@ -24,6 +39,16 @@ class _GStoreState extends State<GStore> {
           title: title,
           description: description,
           price: price,
+          onBuy: () {
+            setState(() {
+              cartItems.add(
+                CartItem(image: image, title: title, price: price),
+              );
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Film ajouté au panier')),
+            );
+          },
         ),
       ),
     );
@@ -36,6 +61,13 @@ class _GStoreState extends State<GStore> {
         title: Text("G-STORE"),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            onPressed: openCart,
+            tooltip: 'Ouvrir le panier',
+            icon: const Icon(Icons.shopping_cart),
+          ),
+        ],
       ),
       body:SingleChildScrollView(
         child: Column(

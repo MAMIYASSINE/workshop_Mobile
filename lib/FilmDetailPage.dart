@@ -5,6 +5,7 @@ class FilmDetailPage extends StatelessWidget {
   final String title;
   final String description;
   final int price;
+  final VoidCallback onBuy;
 
   const FilmDetailPage({
     super.key,
@@ -12,6 +13,7 @@ class FilmDetailPage extends StatelessWidget {
     required this.title,
     required this.description,
     required this.price,
+    required this.onBuy,
   });
 
   @override
@@ -41,7 +43,7 @@ class FilmDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: onBuy,
               icon: const Icon(Icons.shopping_basket),
               label: const Text('Acheter'),
               style: ElevatedButton.styleFrom(
