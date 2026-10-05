@@ -44,19 +44,22 @@ class AuthField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.maxLines = 1,
+    this.validator,
   });
 
   final String hint;
   final bool obscureText;
   final TextInputType? keyboardType;
   final int maxLines;
+  final String? Function(String?)? validator;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextFormField(
       obscureText: obscureText,
       keyboardType: keyboardType,
       maxLines: obscureText ? 1 : maxLines,
+      validator: validator,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: Color(0xFFBDB8BE)),
@@ -111,19 +114,27 @@ class AuthButton extends StatelessWidget {
 }
 
 class ArrowPrompt extends StatelessWidget {
-  const ArrowPrompt({required this.label, super.key});
+  const ArrowPrompt({required this.label, super.key, this.onTap});
 
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Flexible(child: Text(label, textAlign: TextAlign.end)),
-        const SizedBox(width: 12),
-        const Icon(Icons.arrow_forward, color: authAccentColor, size: 24),
-      ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Flexible(child: Text(label, textAlign: TextAlign.end)),
+            const SizedBox(width: 12),
+            const Icon(Icons.arrow_forward, color: authAccentColor, size: 24),
+          ],
+        ),
+      ),
     );
   }
 }
