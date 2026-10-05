@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:workshop_flutter__4ei3/GStore.dart';
+import 'package:workshop_flutter__4ei3/screens/sign_in_screen.dart';
+import 'package:workshop_flutter__4ei3/screens/sign_up_screen.dart';
+import 'package:workshop_flutter__4ei3/screens/profile_settings_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,9 +17,8 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-        splashFactory: NoSplash.splashFactory,
       ),
-      home: GStore(),
+      home: const ProfileSettingsScreen(),
     );
   }
 }
