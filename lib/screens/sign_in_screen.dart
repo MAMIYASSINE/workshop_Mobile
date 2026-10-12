@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:workshop_flutter__4ei3/widgets/auth_widgets.dart';
+import 'package:workshop_flutter__4ei3/helpers/database_helper.dart';
 import 'package:workshop_flutter__4ei3/screens/forgot_password_screen.dart';
 import 'package:workshop_flutter__4ei3/screens/sign_up_screen.dart';
 import 'package:workshop_flutter__4ei3/screens/store_home_screen.dart';
+import 'package:workshop_flutter__4ei3/widgets/auth_widgets.dart';
 
 class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
+  const SignInScreen({super.key, this.storage});
+
+  final FilmStorage? storage;
 
   @override
   State<SignInScreen> createState() => _SignInScreenState();
@@ -26,7 +29,9 @@ class _SignInScreenState extends State<SignInScreen> {
   void _signIn() {
     if (!_formKey.currentState!.validate()) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const StoreHomeScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => StoreHomeScreen(storage: widget.storage),
+      ),
       (route) => false,
     );
   }
@@ -69,7 +74,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   color: authSecondaryColor,
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => const SignUpScreen(),
+                      builder: (_) => SignUpScreen(storage: widget.storage),
                     ),
                   ),
                 ),

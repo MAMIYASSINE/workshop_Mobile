@@ -11,9 +11,9 @@ class MyCart extends StatelessWidget {
   });
 
   final List<Film> films;
-  final ValueChanged<Film> onRemove;
-  final ValueChanged<Film> onOpen;
-  final VoidCallback onCheckout;
+  final Future<void> Function(Film) onRemove;
+  final Future<void> Function(Film) onOpen;
+  final Future<void> Function() onCheckout;
 
   double get _total => films.fold(0, (total, film) => total + film.price);
 
@@ -35,7 +35,7 @@ class MyCart extends StatelessWidget {
               return Card(
                 clipBehavior: Clip.antiAlias,
                 child: ListTile(
-                  onTap: () => onOpen(film),
+                  onTap: () async => onOpen(film),
                   leading: Image.asset(
                     'assets/images/${film.image}',
                     width: 72,
@@ -46,7 +46,7 @@ class MyCart extends StatelessWidget {
                   subtitle: Text('${film.price.toStringAsFixed(0)} DT'),
                   trailing: IconButton(
                     tooltip: 'Retirer du panier',
-                    onPressed: () => onRemove(film),
+                    onPressed: () async => onRemove(film),
                     icon: const Icon(Icons.delete_outline, color: Colors.red),
                   ),
                 ),
@@ -64,7 +64,10 @@ class MyCart extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
-              FilledButton(onPressed: onCheckout, child: const Text('Acheter')),
+              FilledButton(
+                onPressed: () async => onCheckout(),
+                child: const Text('Acheter'),
+              ),
             ],
           ),
         ),

@@ -1,17 +1,41 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:workshop_flutter__4ei3/helpers/database_helper.dart';
 import 'package:workshop_flutter__4ei3/main.dart';
+import 'package:workshop_flutter__4ei3/models/Film.dart';
+
+class FakeFilmStorage implements FilmStorage {
+  final List<Film> _cart = [];
+  final List<Film> _favorites = [];
+
+  @override
+  Future<void> addFavorite(Film film) async {
+    if (!_favorites.contains(film)) _favorites.add(film);
+  }
+
+  @override
+  Future<void> addFilmToCart(Film film) async {
+    if (!_cart.contains(film)) _cart.add(film);
+  }
+
+  @override
+  Future<void> clearCart() async => _cart.clear();
+
+  @override
+  Future<List<Film>> getCartFilms() async => List.of(_cart);
+
+  @override
+  Future<List<Film>> getFavoriteFilms() async => List.of(_favorites);
+
+  @override
+  Future<void> removeFavorite(Film film) async => _favorites.remove(film);
+
+  @override
+  Future<void> removeFilmFromCart(Film film) async => _cart.remove(film);
+}
 
 void main() {
-  testWidgets('valide les formulaires et permet d’acheter un film', (
+  testWidgets('valide les formulaires et permet d acheter un film', (
     WidgetTester tester,
   ) async {
     tester.view.physicalSize = const Size(400, 850);
@@ -19,7 +43,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(MyApp(storage: FakeFilmStorage()));
 
     await tester.tap(find.text('SIGN IN'));
     await tester.pumpAndSettle();
@@ -59,6 +83,10 @@ void main() {
     expect(find.text('300 DT'), findsOneWidget);
     expect(find.text('Acheter'), findsOneWidget);
 
+    await tester.tap(find.byIcon(Icons.favorite_border));
+    await tester.pumpAndSettle();
+    expect(find.byIcon(Icons.favorite), findsOneWidget);
+
     await tester.tap(find.text('Acheter'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Panier'));
@@ -70,8 +98,12 @@ void main() {
     await tester.ensureVisible(checkoutButton);
     await tester.tapAt(tester.getCenter(checkoutButton) - const Offset(0, 12));
     await tester.pumpAndSettle();
-    expect(find.text('Bibliothèque'), findsWidgets);
+    expect(find.text('STORE'), findsOneWidget);
     expect(find.text('Total : 300 DT'), findsNothing);
+
+    await tester.tap(find.text('Favoris'));
+    await tester.pumpAndSettle();
+    expect(find.text('House Of Dead'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();

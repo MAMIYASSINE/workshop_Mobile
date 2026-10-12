@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workshop_flutter__4ei3/helpers/database_helper.dart';
 import 'package:workshop_flutter__4ei3/models/Film.dart';
 import 'package:workshop_flutter__4ei3/models/film_catalog.dart';
 import 'package:workshop_flutter__4ei3/screens/Details.dart';
@@ -6,7 +7,10 @@ import 'package:workshop_flutter__4ei3/screens/MyCart.dart';
 import 'package:workshop_flutter__4ei3/screens/profile_settings_screen.dart';
 
 class StoreHomeScreen extends StatefulWidget {
-  const StoreHomeScreen({super.key});
+  StoreHomeScreen({super.key, FilmStorage? storage})
+    : storage = storage ?? DatabaseHelper.instance;
+
+  final FilmStorage storage;
 
   @override
   State<StoreHomeScreen> createState() => _StoreHomeScreenState();
@@ -14,58 +18,89 @@ class StoreHomeScreen extends StatefulWidget {
 
 class _StoreHomeScreenState extends State<StoreHomeScreen> {
   int _selectedTab = 0;
-  final List<Film> _cart = [];
-  final List<Film> _library = [];
-  final Set<Film> _purchased = {};
-  final Set<Film> _favorites = {};
+  bool _isLoading = true;
+  List<Film> _cart = [];
+  List<Film> _favorites = [];
 
   String get _title => switch (_selectedTab) {
     0 => 'STORE',
-    1 => 'Bibliothèque',
+    1 => 'Favoris',
     _ => 'Panier',
   };
 
-  void _openDetails(Film film) {
-    Navigator.of(context).push<void>(
+  Set<Film> get _favoriteSet => _favorites.toSet();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedFilms();
+  }
+
+  Future<void> _loadSavedFilms() async {
+    final cart = await widget.storage.getCartFilms();
+    final favorites = await widget.storage.getFavoriteFilms();
+
+    if (!mounted) return;
+    setState(() {
+      _cart = cart;
+      _favorites = favorites;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _openDetails(Film film) async {
+    await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => Details(film: film, onBuy: () => _addToCart(film)),
+        builder: (_) => Details(
+          film: film,
+          isFavorite: _favoriteSet.contains(film),
+          onBuy: () => _addToCart(film),
+          onFavorite: () => _toggleFavorite(film),
+        ),
       ),
     );
   }
 
-  void _addToCart(Film film) {
-    setState(() {
-      _cart.add(film);
-    });
+  Future<void> _addToCart(Film film) async {
+    await widget.storage.addFilmToCart(film);
+    final cart = await widget.storage.getCartFilms();
+
+    if (!mounted) return;
+    setState(() => _cart = cart);
   }
 
-  void _toggleFavorite(Film film) {
-    setState(() {
-      if (_favorites.remove(film)) {
-        if (!_purchased.contains(film)) _library.remove(film);
-      } else {
-        _favorites.add(film);
-        if (!_library.contains(film)) _library.add(film);
-      }
-    });
+  Future<void> _toggleFavorite(Film film) async {
+    if (_favoriteSet.contains(film)) {
+      await widget.storage.removeFavorite(film);
+    } else {
+      await widget.storage.addFavorite(film);
+    }
+
+    final favorites = await widget.storage.getFavoriteFilms();
+    if (!mounted) return;
+    setState(() => _favorites = favorites);
   }
 
-  void _removeFromCart(Film film) {
-    setState(() => _cart.remove(film));
+  Future<void> _removeFromCart(Film film) async {
+    await widget.storage.removeFilmFromCart(film);
+    final cart = await widget.storage.getCartFilms();
+
+    if (!mounted) return;
+    setState(() => _cart = cart);
   }
 
-  void _checkout() {
+  Future<void> _checkout() async {
     if (_cart.isEmpty) return;
+
+    await widget.storage.clearCart();
+    if (!mounted) return;
+
     setState(() {
-      for (final film in _cart) {
-        _purchased.add(film);
-        if (!_library.contains(film)) _library.add(film);
-      }
-      _cart.clear();
-      _selectedTab = 1;
+      _cart = [];
+      _selectedTab = 0;
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Films ajoutés à votre bibliothèque.')),
+      const SnackBar(content: Text('Achat effectue avec succes.')),
     );
   }
 
@@ -81,19 +116,23 @@ class _StoreHomeScreenState extends State<StoreHomeScreen> {
   }
 
   Widget _buildSelectedTab() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return switch (_selectedTab) {
       0 => _FilmCollection(
         films: filmCatalog,
-        favorites: _favorites,
+        favorites: _favoriteSet,
         onOpen: _openDetails,
         onFavorite: _toggleFavorite,
       ),
       1 => _FilmCollection(
-        films: _library,
-        favorites: _favorites,
+        films: _favorites,
+        favorites: _favoriteSet,
         onOpen: _openDetails,
         onFavorite: _toggleFavorite,
-        emptyMessage: 'Votre bibliothèque est vide.',
+        emptyMessage: 'Votre liste des favoris est vide.',
       ),
       _ => MyCart(
         films: _cart,
@@ -153,9 +192,9 @@ class _StoreHomeScreenState extends State<StoreHomeScreen> {
             label: 'Store',
           ),
           NavigationDestination(
-            icon: Icon(Icons.video_library_outlined),
-            selectedIcon: Icon(Icons.video_library),
-            label: 'Bibliothèque',
+            icon: Icon(Icons.favorite_border),
+            selectedIcon: Icon(Icons.favorite),
+            label: 'Favoris',
           ),
           NavigationDestination(
             icon: Icon(Icons.shopping_basket_outlined),
@@ -179,8 +218,8 @@ class _FilmCollection extends StatelessWidget {
 
   final List<Film> films;
   final Set<Film> favorites;
-  final ValueChanged<Film> onOpen;
-  final ValueChanged<Film> onFavorite;
+  final Future<void> Function(Film) onOpen;
+  final Future<void> Function(Film) onFavorite;
   final String? emptyMessage;
 
   @override
@@ -194,10 +233,12 @@ class _FilmCollection extends StatelessWidget {
       itemCount: films.length,
       itemBuilder: (context, index) {
         final film = films[index];
+        final isFavorite = favorites.contains(film);
+
         return Card(
           clipBehavior: Clip.antiAlias,
           child: InkWell(
-            onTap: () => onOpen(film),
+            onTap: () async => onOpen(film),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -222,15 +263,13 @@ class _FilmCollection extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: favorites.contains(film)
-                            ? 'Retirer de la bibliothèque'
-                            : 'Ajouter à la bibliothèque',
-                        onPressed: () => onFavorite(film),
+                        tooltip: isFavorite
+                            ? 'Retirer des favoris'
+                            : 'Ajouter aux favoris',
+                        onPressed: () async => onFavorite(film),
                         icon: Icon(
-                          favorites.contains(film)
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: Colors.amber,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: Colors.red,
                         ),
                       ),
                     ],

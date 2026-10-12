@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:workshop_flutter__4ei3/helpers/database_helper.dart';
 import 'package:workshop_flutter__4ei3/screens/sign_in_screen.dart';
 
 void main() {
@@ -6,7 +7,9 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.storage});
+
+  final FilmStorage? storage;
 
   // This widget is the root of your application.
   @override
@@ -14,7 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const SignInScreen(),
+      home: SignInScreen(storage: storage),
     );
   }
 }

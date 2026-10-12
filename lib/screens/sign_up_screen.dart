@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:workshop_flutter__4ei3/helpers/database_helper.dart';
 import 'package:workshop_flutter__4ei3/screens/store_home_screen.dart';
 import 'package:workshop_flutter__4ei3/widgets/auth_widgets.dart';
 
 class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+  const SignUpScreen({super.key, this.storage});
+
+  final FilmStorage? storage;
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -29,7 +32,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _signUp() {
     if (!_formKey.currentState!.validate()) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const StoreHomeScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => StoreHomeScreen(storage: widget.storage),
+      ),
       (route) => false,
     );
   }
